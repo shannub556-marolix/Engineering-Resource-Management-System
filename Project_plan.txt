@@ -1,0 +1,336 @@
+✅ Project Goal Summary
+Build a resource management system where:
+
+Engineers can log in and view their assignments.
+
+Managers can create projects, assign engineers, and track capacity.
+
+Capacity, skills, and timelines are clearly shown via UI.
+
+🔧 Tech Stack
+Layer	Tech Stack
+Frontend	React + TypeScript + ShadCN + Tailwind CSS + React Hook Form + Zustand
+Backend	Node.js (Express or NestJS) + JWT Auth
+Database	MongoDB with Mongoose
+Dev Tools	Cursor, GitHub Copilot, ChatGPT
+Charts	Recharts or Chart.js for team analytics
+Optional	Vite (for fast build), Postman (for testing APIs)
+
+🧠 Implementation Plan (AI-Optimized)
+🔁 Day 1 - Backend + Auth + DB Setup (8 hrs)
+⏱ Hour 1–2: Project Initialization
+Setup monorepo or two folders: /client and /server
+
+Init Node.js backend (npm init, Express or NestJS setup)
+
+Connect MongoDB via Mongoose
+
+Init frontend with Vite + Tailwind + ShadCN + Zustand
+
+⏱ Hour 2–4: Authentication System (JWT)
+Create user model with role, email, password, skills, etc.
+
+Routes:
+
+POST /api/auth/login
+
+GET /api/auth/profile (protected route)
+
+Implement login + JWT generation + middleware
+
+✅ Test via Postman and log in as manager or engineer
+
+⏱ Hour 4–6: Engineer + Project Schema & Routes
+Engineer routes:
+
+GET /api/engineers
+
+GET /api/engineers/:id/capacity
+
+Project routes:
+
+GET /api/projects
+
+POST /api/projects
+
+Create Mongoose models and controller logic
+
+⏱ Hour 6–8: Assignment Model + Core Logic
+Assignment model with allocation %
+
+POST /api/assignments, PUT, DELETE
+
+Logic to calculate:
+
+ts
+Copy
+Edit
+available = maxCapacity - sum(assignment.allocationPercentage)
+Implement findSuitableEngineers() logic
+
+🎨 Day 2 - Frontend UI + Dashboards (8 hrs)
+⏱ Hour 1–2: UI Setup & Auth
+Setup routes using React Router
+
+Login page: manager/engineer role redirect
+
+Store token in localStorage; Zustand for state
+
+⏱ Hour 2–4: Manager Dashboard
+Team overview: engineers with capacity bars
+
+Create/Edit projects form (React Hook Form)
+
+Assignment form (dropdown: engineer + project + %)
+
+✅ Use ShadCN components like Table, Form, Badge, Progress
+
+⏱ Hour 4–6: Engineer Dashboard
+Show:
+
+Current assignments
+
+Remaining capacity
+
+Profile info (editable skills, etc.)
+
+✅ Add tags for skills, progress bar for capacity
+
+⏱ Hour 6–7: Charts + Filters
+Add filters by skill, project status
+
+Charts for:
+
+Team utilization (pie or bar chart)
+
+Skill gaps (bonus)
+
+⏱ Hour 7–8: Final Polish + Docs
+Add sample data via script
+
+Write a proper README:
+
+Setup instructions
+
+AI tools used and challenges
+
+Deploy frontend (e.g., Vercel) and backend (e.g., Render or Railway)
+
+📊 Sample Data
+Seed 3–4 engineers:
+
+js
+Copy
+Edit
+{
+  name: "Alice",
+  skills: ["React", "Node.js"],
+  seniority: "senior",
+  maxCapacity: 100
+}
+And 3–4 projects with different skills and timelines. Assign engineers with different percentages.
+
+✅ What to Document in README
+Section	What to Include
+AI Tools Used	Cursor, ChatGPT, Copilot
+Usage	Where/how you used AI (e.g., form validation logic, optimization)
+Challenges	AI gave incorrect code — how you debugged/fixed
+Validation	How you ensured code worked as expected
+
+📌 Key UI Pages to Build
+Manager
+/dashboard – Capacity view
+
+/projects – Project list + create
+
+/assignments – Assign engineers
+
+Engineer
+/my-assignments
+
+/profile
+
+✨ Bonus (Optional but Adds Value)
+Assignment calendar (basic Gantt)
+
+Skill gap detection (compare team vs. project needs)
+
+Notifications for overload (e.g., >100% assigned)
+
+🚀 Tips for Speed & Success
+Use ShadCN UI to avoid styling from scratch
+
+Use AI for code boilerplate, but understand and customize
+
+Keep each page simple and focused
+
+Use Zustand for minimal state management complexity
+
+
+New_Plan
+🔧 Context:
+Build the complete backend for a full-stack Engineering Resource Management System. The backend should be built using Node.js with Express, MongoDB with Mongoose, and JWT-based authentication. It should include RESTful API routes, Mongoose models, and all business logic for managing engineers, projects, assignments, and capacity tracking.
+
+📦 Tech Stack
+Backend Framework: Node.js with Express
+
+Database: MongoDB using Mongoose
+
+Auth: JWT-based authentication
+
+Dev tools: Postman for testing, .env for secrets, bcrypt for password hashing
+
+🔐 Authentication & User Roles
+Create a full authentication system:
+
+User Model
+
+ts
+Copy
+Edit
+{
+  email: String,
+  password: String (hashed),
+  name: String,
+  role: 'engineer' | 'manager',
+  skills: [String],             // e.g., ['React', 'Node.js']
+  seniority: 'junior' | 'mid' | 'senior',
+  maxCapacity: Number,          // 100 for full-time, 50 for part-time
+  department: String
+}
+Routes
+
+POST /api/auth/login – login with JWT generation
+
+GET /api/auth/profile – protected route, return logged-in user details
+
+Use middleware to protect routes and extract req.user
+
+👩‍💻 Engineer Management
+GET /api/engineers – list all engineers
+
+GET /api/engineers/:id/capacity – return engineer’s available capacity after calculating assignments
+
+🧪 Project Management
+Create a Project model:
+
+ts
+Copy
+Edit
+{
+  name: String,
+  description: String,
+  startDate: Date,
+  endDate: Date,
+  requiredSkills: [String],
+  teamSize: Number,
+  status: 'planning' | 'active' | 'completed',
+  managerId: ObjectId (ref: User)
+}
+Routes:
+
+GET /api/projects – list projects
+
+POST /api/projects – create project
+
+GET /api/projects/:id – get project details
+
+🗂 Assignment Management
+Create Assignment model:
+
+ts
+Copy
+Edit
+{
+  engineerId: ObjectId,
+  projectId: ObjectId,
+  allocationPercentage: Number, // 0–100
+  startDate: Date,
+  endDate: Date,
+  role: String // e.g., Developer, Tech Lead
+}
+Routes:
+
+GET /api/assignments
+
+POST /api/assignments
+
+PUT /api/assignments/:id
+
+DELETE /api/assignments/:id
+
+🔢 Business Logic
+Capacity Calculation
+Function to get available capacity for an engineer:
+
+ts
+Copy
+Edit
+function getAvailableCapacity(engineerId) {
+  const engineer = await Engineer.findById(engineerId);
+  const activeAssignments = await Assignment.find({ engineerId });
+  const totalAllocated = activeAssignments.reduce((sum, a) => sum + a.allocationPercentage, 0);
+  return engineer.maxCapacity - totalAllocated;
+}
+Skill Matching
+
+ts
+Copy
+Edit
+function findSuitableEngineers(project) {
+  const engineers = await Engineer.find();
+  return engineers.filter(engineer =>
+    project.requiredSkills.some(skill => engineer.skills.includes(skill))
+  );
+}
+🧪 Middleware & Utility
+Use express.json() and CORS setup
+
+Create authMiddleware to verify JWT and attach user to request
+
+Use .env for MONGODB_URI, JWT_SECRET, etc.
+
+🧾 Bonus: Seed Script
+Add a script to seed:
+
+3–4 engineers with varying skills and capacities
+
+3–4 projects with different requirements
+
+6–8 assignments
+
+🧼 Folder Structure
+pgsql
+Copy
+Edit
+/server
+│
+├── models/
+│   ├── User.js
+│   ├── Project.js
+│   ├── Assignment.js
+│
+├── routes/
+│   ├── auth.js
+│   ├── engineers.js
+│   ├── projects.js
+│   ├── assignments.js
+│
+├── middleware/
+│   ├── authMiddleware.js
+│
+├── controllers/
+│   ├── authController.js
+│   ├── engineerController.js
+│   ├── projectController.js
+│   ├── assignmentController.js
+│
+├── utils/
+│   ├── capacity.js
+│   ├── matchEngineers.js
+│
+├── seed/
+│   └── seedData.js
+│
+├── app.js
+└── server.js

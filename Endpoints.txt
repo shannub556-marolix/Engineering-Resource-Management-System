@@ -1,0 +1,643 @@
+# Engineering Resource Management System API Documentation
+
+## Base URL
+http://localhost:5000
+
+## Authentication
+All endpoints except register and login require JWT token in Authorization header:
+Authorization: Bearer <your-token>
+
+## 1. Authentication Endpoints
+
+### Register User
+POST /api/auth/register
+Content-Type: application/json
+
+Request Body:
+{
+    "email": "test.manager@example.com",
+    "password": "password123",
+    "name": "Test Manager",
+    "role": "manager",
+    "skills": ["Project Management", "Agile"],
+    "seniority": "senior",
+    "maxCapacity": 100,
+    "department": "Engineering"
+}
+
+Response (201 Created):
+```json
+{
+    "success": true,
+    "data": {
+        "user": {
+            "_id": "65f2e8b7c261e6001234abcd",
+            "name": "Test Manager",
+            "email": "test.manager@example.com",
+            "role": "manager",
+            "skills": ["Project Management", "Agile"],
+            "seniority": "senior",
+            "maxCapacity": 100,
+            "department": "Engineering",
+            "createdAt": "2024-03-14T10:30:00.000Z",
+            "updatedAt": "2024-03-14T10:30:00.000Z"
+        },
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
+}
+```
+
+### Login
+POST /api/auth/login
+Content-Type: application/json
+
+Request Body:
+{
+    "email": "test.manager@example.com",
+    "password": "password123"
+}
+
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "user": {
+            "_id": "65f2e8b7c261e6001234abcd",
+            "name": "Test Manager",
+            "email": "test.manager@example.com",
+            "role": "manager"
+        },
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
+}
+```
+
+### Get Profile
+GET /api/auth/profile
+Authorization: Bearer <your-token>
+
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "user": {
+            "_id": "65f2e8b7c261e6001234abcd",
+            "name": "Test Manager",
+            "email": "test.manager@example.com",
+            "role": "manager",
+            "skills": ["Project Management", "Agile"],
+            "seniority": "senior",
+            "maxCapacity": 100,
+            "department": "Engineering",
+            "createdAt": "2024-03-14T10:30:00.000Z",
+            "updatedAt": "2024-03-14T10:30:00.000Z"
+        }
+    }
+}
+```
+
+## 2. Engineer Endpoints
+
+### Get All Engineers
+GET /api/engineers
+Authorization: Bearer <your-token>
+
+Response (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "engineers": [
+      {
+        "_id": "...",
+        "name": "...",
+        "email": "...",
+        "skills": [...],
+        "seniority": "...",
+        "department": "...",
+        "maxCapacity": 100,
+        "currentAllocation": 60,
+        "availableCapacity": 40,
+        "assignments": [
+          {
+            "projectName": "...",
+            "allocationPercentage": 40,
+            "startDate": "...",
+            "endDate": "...",
+            "role": "...",
+            "status": "active"
+          },
+          // ... more assignments
+        ]
+      },
+      // ... more engineers
+    ]
+  }
+}
+```
+
+### Create Engineer (Manager only)
+POST /api/engineers
+Authorization: Bearer <your-token>
+Content-Type: application/json
+
+Request Body:
+{
+    "email": "new.engineer@example.com",
+    "password": "password123",
+    "name": "New Engineer",
+    "skills": ["React", "Node.js"],
+    "seniority": "mid",
+    "maxCapacity": 100,
+    "department": "Engineering"
+}
+
+Response (201 Created):
+```json
+{
+    "success": true,
+    "data": {
+        "engineer": {
+            "_id": "65f2e8b7c261e6001234abcf",
+            "name": "New Engineer",
+            "email": "new.engineer@example.com",
+            "role": "engineer",
+            "skills": ["React", "Node.js"],
+            "seniority": "mid",
+            "maxCapacity": 100,
+            "department": "Engineering",
+            "currentAllocation": 0,
+            "createdAt": "2024-03-14T10:30:00.000Z",
+            "updatedAt": "2024-03-14T10:30:00.000Z"
+        }
+    }
+}
+```
+
+### Get Engineer Capacity
+GET /api/engineers/:id/capacity
+Authorization: Bearer <your-token>
+
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "engineer": {
+            "_id": "684086a99e62b45f09e31318",
+            "name": "Jane Smith",
+            "maxCapacity": 100,
+            "currentAllocation": 40,
+            "availableCapacity": 60,
+            "assignments": [
+                {
+                    "projectName": "E-commerce Platform",
+                    "allocationPercentage": 40,
+                    "startDate": "2024-01-01T00:00:00.000Z",
+                    "endDate": "2024-06-30T00:00:00.000Z",
+                    "role": "Backend Developer",
+                    "status": "active"
+                }
+            ]
+        }
+    }
+}
+```
+
+### Update Engineer (Manager only)
+PUT /api/engineers/:id
+Authorization: Bearer <your-token>
+Content-Type: application/json
+
+Request Body:
+{
+    "skills": ["React", "Node.js", "TypeScript"],
+    "maxCapacity": 80
+}
+
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "engineer": {
+            "_id": "65f2e8b7c261e6001234abce",
+            "name": "John Doe",
+            "email": "john.doe@example.com",
+            "role": "engineer",
+            "skills": ["React", "Node.js", "TypeScript"],
+            "seniority": "senior",
+            "maxCapacity": 80,
+            "department": "Engineering",
+            "currentAllocation": 60,
+            "createdAt": "2024-03-14T10:30:00.000Z",
+            "updatedAt": "2024-03-14T10:35:00.000Z"
+        }
+    }
+}
+```
+
+### Delete Engineer (Manager only)
+DELETE /api/engineers/:id
+Authorization: Bearer <your-token>
+
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "message": "Engineer deleted successfully"
+    }
+}
+```
+
+## 3. Project Endpoints
+
+### Get All Projects
+GET /api/projects
+Authorization: Bearer <your-token>
+
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "projects": [
+            {
+                "_id": "65f2e8b7c261e6001234abd0",
+                "name": "E-commerce Platform",
+                "description": "Building a modern e-commerce platform",
+                "startDate": "2024-03-01",
+                "endDate": "2024-08-31",
+                "requiredSkills": ["React", "Node.js", "MongoDB"],
+                "teamSize": 5,
+                "status": "active",
+                "currentTeamSize": 3,
+                "createdAt": "2024-03-14T10:30:00.000Z",
+                "updatedAt": "2024-03-14T10:30:00.000Z"
+            }
+        ]
+    }
+}
+```
+
+### Create Project (Manager only)
+POST /api/projects
+Authorization: Bearer <your-token>
+Content-Type: application/json
+
+Request Body:
+{
+    "name": "New Project",
+    "description": "Project description",
+    "startDate": "2024-03-01",
+    "endDate": "2024-08-31",
+    "requiredSkills": ["React", "Node.js"],
+    "teamSize": 3,
+    "status": "planning"
+}
+
+Response (201 Created):
+```json
+{
+    "success": true,
+    "data": {
+        "project": {
+            "_id": "65f2e8b7c261e6001234abd1",
+            "name": "New Project",
+            "description": "Project description",
+            "startDate": "2024-03-01",
+            "endDate": "2024-08-31",
+            "requiredSkills": ["React", "Node.js"],
+            "teamSize": 3,
+            "status": "planning",
+            "currentTeamSize": 0,
+            "createdAt": "2024-03-14T10:30:00.000Z",
+            "updatedAt": "2024-03-14T10:30:00.000Z"
+        }
+    }
+}
+```
+
+### Get Project Details
+GET /api/projects/:id
+Authorization: Bearer <your-token>
+
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "project": {
+            "_id": "65f2e8b7c261e6001234abd0",
+            "name": "E-commerce Platform",
+            "description": "Building a modern e-commerce platform",
+            "startDate": "2024-03-01",
+            "endDate": "2024-08-31",
+            "requiredSkills": ["React", "Node.js", "MongoDB"],
+            "teamSize": 5,
+            "status": "active",
+            "currentTeamSize": 3,
+            "team": [
+                {
+                    "engineerId": "65f2e8b7c261e6001234abce",
+                    "name": "John Doe",
+                    "role": "Lead Developer",
+                    "allocationPercentage": 40
+                }
+            ],
+            "createdAt": "2024-03-14T10:30:00.000Z",
+            "updatedAt": "2024-03-14T10:30:00.000Z"
+        }
+    }
+}
+```
+
+### Find Suitable Engineers for Project
+GET /api/projects/:id/suitable-engineers
+Authorization: Bearer <your-token>
+
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "suitableEngineers": [
+            {
+                "_id": "65f2e8b7c261e6001234abce",
+                "name": "John Doe",
+                "skills": ["React", "Node.js", "TypeScript"],
+                "seniority": "senior",
+                "currentAllocation": 60,
+                "availableCapacity": 40,
+                "skillMatch": 0.8,
+                "matchDetails": {
+                    "matchingSkills": ["React", "Node.js"],
+                    "missingSkills": ["MongoDB"]
+                }
+            }
+        ]
+    }
+}
+```
+
+### Update Project (Manager only)
+PUT /api/projects/:id
+Authorization: Bearer <your-token>
+Content-Type: application/json
+
+Request Body:
+{
+    "status": "active",
+    "teamSize": 4
+}
+
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "project": {
+            "_id": "65f2e8b7c261e6001234abd0",
+            "name": "E-commerce Platform",
+            "description": "Building a modern e-commerce platform",
+            "startDate": "2024-03-01",
+            "endDate": "2024-08-31",
+            "requiredSkills": ["React", "Node.js", "MongoDB"],
+            "teamSize": 4,
+            "status": "active",
+            "currentTeamSize": 3,
+            "createdAt": "2024-03-14T10:30:00.000Z",
+            "updatedAt": "2024-03-14T10:35:00.000Z"
+        }
+    }
+}
+```
+
+### Delete Project (Manager only)
+DELETE /api/projects/:id
+Authorization: Bearer <your-token>
+
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "message": "Project deleted successfully"
+    }
+}
+```
+
+## 4. Assignment Endpoints
+
+### Get All Assignments
+GET /api/assignments
+Authorization: Bearer <your-token>
+
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "assignments": [
+            {
+                "_id": "65f2e8b7c261e6001234abd2",
+                "engineer": {
+                    "_id": "65f2e8b7c261e6001234abce",
+                    "name": "John Doe"
+                },
+                "project": {
+                    "_id": "65f2e8b7c261e6001234abd0",
+                    "name": "E-commerce Platform"
+                },
+                "allocationPercentage": 40,
+                "startDate": "2024-03-01",
+                "endDate": "2024-08-31",
+                "role": "Lead Developer",
+                "status": "active",
+                "createdAt": "2024-03-14T10:30:00.000Z",
+                "updatedAt": "2024-03-14T10:30:00.000Z"
+            }
+        ]
+    }
+}
+```
+
+### Create Assignment (Manager only)
+POST /api/assignments
+Authorization: Bearer <your-token>
+Content-Type: application/json
+
+Request Body:
+{
+    "engineerId": "<engineer-id>",
+    "projectId": "<project-id>",
+    "allocationPercentage": 60,
+    "startDate": "2024-03-01",
+    "endDate": "2024-08-31",
+    "role": "Lead Developer"
+}
+
+Response (201 Created):
+```json
+{
+    "success": true,
+    "data": {
+        "assignment": {
+            "_id": "65f2e8b7c261e6001234abd2",
+            "engineer": {
+                "_id": "65f2e8b7c261e6001234abce",
+                "name": "John Doe"
+            },
+            "project": {
+                "_id": "65f2e8b7c261e6001234abd0",
+                "name": "E-commerce Platform"
+            },
+            "allocationPercentage": 60,
+            "startDate": "2024-03-01",
+            "endDate": "2024-08-31",
+            "role": "Lead Developer",
+            "status": "active",
+            "createdAt": "2024-03-14T10:30:00.000Z",
+            "updatedAt": "2024-03-14T10:30:00.000Z"
+        }
+    }
+}
+```
+
+### Get Assignment Details
+GET /api/assignments/:id
+Authorization: Bearer <your-token>
+
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "assignment": {
+            "_id": "65f2e8b7c261e6001234abd2",
+            "engineer": {
+                "_id": "65f2e8b7c261e6001234abce",
+                "name": "John Doe",
+                "email": "john.doe@example.com",
+                "skills": ["React", "Node.js", "TypeScript"]
+            },
+            "project": {
+                "_id": "65f2e8b7c261e6001234abd0",
+                "name": "E-commerce Platform",
+                "description": "Building a modern e-commerce platform",
+                "status": "active"
+            },
+            "allocationPercentage": 40,
+            "startDate": "2024-03-01",
+            "endDate": "2024-08-31",
+            "role": "Lead Developer",
+            "status": "active",
+            "createdAt": "2024-03-14T10:30:00.000Z",
+            "updatedAt": "2024-03-14T10:30:00.000Z"
+        }
+    }
+}
+```
+
+### Update Assignment (Manager only)
+PUT /api/assignments/:id
+Authorization: Bearer <your-token>
+Content-Type: application/json
+
+Request Body:
+{
+    "allocationPercentage": 80,
+    "role": "Senior Developer"
+}
+
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "assignment": {
+            "_id": "65f2e8b7c261e6001234abd2",
+            "engineer": {
+                "_id": "65f2e8b7c261e6001234abce",
+                "name": "John Doe"
+            },
+            "project": {
+                "_id": "65f2e8b7c261e6001234abd0",
+                "name": "E-commerce Platform"
+            },
+            "allocationPercentage": 80,
+            "startDate": "2024-03-01",
+            "endDate": "2024-08-31",
+            "role": "Senior Developer",
+            "status": "active",
+            "createdAt": "2024-03-14T10:30:00.000Z",
+            "updatedAt": "2024-03-14T10:35:00.000Z"
+        }
+    }
+}
+```
+
+### Delete Assignment (Manager only)
+DELETE /api/assignments/:id
+Authorization: Bearer <your-token>
+
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "message": "Assignment deleted successfully"
+    }
+}
+```
+
+## Error Responses
+
+### 401 Unauthorized
+```json
+{
+    "success": false,
+    "error": "Not authorized to access this route"
+}
+```
+
+### 403 Forbidden
+```json
+{
+    "success": false,
+    "error": "Not authorized to perform this action"
+}
+```
+
+### 404 Not Found
+```json
+{
+    "success": false,
+    "error": "Resource not found"
+}
+```
+
+### 500 Server Error
+```json
+{
+    "success": false,
+    "error": "Server Error"
+}
+```
+
+## Testing Notes
+
+1. First, register a manager account using the register endpoint
+2. Login with the manager account to get the JWT token
+3. Copy the token from the login response
+4. Use the token in the Authorization header for all other requests
+
+## Important Notes
+- Replace <your-token> with the actual JWT token received from login
+- Replace :id in URLs with actual IDs (e.g., http://localhost:5000/api/engineers/123456)
+- All endpoints except register and login require authentication
+- Manager-only endpoints require the user to have the 'manager' role
+- The database is seeded with sample data, so you can use those IDs for testing

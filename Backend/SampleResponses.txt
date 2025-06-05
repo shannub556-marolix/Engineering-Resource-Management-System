@@ -1,0 +1,335 @@
+# Sample Responses for GET Endpoints
+
+## 1. Authentication Endpoints
+
+### Get Profile
+GET /api/auth/profile
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "user": {
+            "_id": "65f2e8b7c261e6001234abcd",
+            "name": "Test Manager",
+            "email": "test.manager@example.com",
+            "role": "manager",
+            "skills": ["Project Management", "Agile"],
+            "seniority": "senior",
+            "maxCapacity": 100,
+            "department": "Engineering",
+            "createdAt": "2024-03-14T10:30:00.000Z",
+            "updatedAt": "2024-03-14T10:30:00.000Z"
+        }
+    }
+}
+```
+
+## 2. Engineer Endpoints
+
+### Get All Engineers
+GET /api/engineers
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "engineers": [
+            {
+                "_id": "65f2e8b7c261e6001234abce",
+                "name": "John Doe",
+                "email": "john.doe@example.com",
+                "role": "engineer",
+                "skills": ["React", "Node.js", "TypeScript"],
+                "seniority": "senior",
+                "maxCapacity": 100,
+                "department": "Engineering",
+                "currentAllocation": 60,
+                "createdAt": "2024-03-14T10:30:00.000Z",
+                "updatedAt": "2024-03-14T10:30:00.000Z"
+            },
+            {
+                "_id": "65f2e8b7c261e6001234abcf",
+                "name": "Jane Smith",
+                "email": "jane.smith@example.com",
+                "role": "engineer",
+                "skills": ["Python", "Django", "AWS"],
+                "seniority": "mid",
+                "maxCapacity": 80,
+                "department": "Engineering",
+                "currentAllocation": 40,
+                "createdAt": "2024-03-14T10:30:00.000Z",
+                "updatedAt": "2024-03-14T10:30:00.000Z"
+            }
+        ]
+    }
+}
+```
+
+### Get Engineer Capacity
+GET /api/engineers/:id/capacity
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "engineer": {
+            "_id": "65f2e8b7c261e6001234abce",
+            "name": "John Doe",
+            "maxCapacity": 100,
+            "currentAllocation": 60,
+            "availableCapacity": 40,
+            "assignments": [
+                {
+                    "projectName": "E-commerce Platform",
+                    "allocationPercentage": 40,
+                    "startDate": "2024-03-01",
+                    "endDate": "2024-08-31"
+                },
+                {
+                    "projectName": "Mobile App",
+                    "allocationPercentage": 20,
+                    "startDate": "2024-03-15",
+                    "endDate": "2024-06-30"
+                }
+            ]
+        }
+    }
+}
+```
+
+## 3. Project Endpoints
+
+### Get All Projects
+GET /api/projects
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "projects": [
+            {
+                "_id": "65f2e8b7c261e6001234abd0",
+                "name": "E-commerce Platform",
+                "description": "Building a modern e-commerce platform",
+                "startDate": "2024-03-01",
+                "endDate": "2024-08-31",
+                "requiredSkills": ["React", "Node.js", "MongoDB"],
+                "teamSize": 5,
+                "status": "active",
+                "currentTeamSize": 3,
+                "createdAt": "2024-03-14T10:30:00.000Z",
+                "updatedAt": "2024-03-14T10:30:00.000Z"
+            },
+            {
+                "_id": "65f2e8b7c261e6001234abd1",
+                "name": "Mobile App",
+                "description": "Cross-platform mobile application",
+                "startDate": "2024-03-15",
+                "endDate": "2024-06-30",
+                "requiredSkills": ["React Native", "TypeScript"],
+                "teamSize": 3,
+                "status": "planning",
+                "currentTeamSize": 0,
+                "createdAt": "2024-03-14T10:30:00.000Z",
+                "updatedAt": "2024-03-14T10:30:00.000Z"
+            }
+        ]
+    }
+}
+```
+
+### Get Project Details
+GET /api/projects/:id
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "project": {
+            "_id": "65f2e8b7c261e6001234abd0",
+            "name": "E-commerce Platform",
+            "description": "Building a modern e-commerce platform",
+            "startDate": "2024-03-01",
+            "endDate": "2024-08-31",
+            "requiredSkills": ["React", "Node.js", "MongoDB"],
+            "teamSize": 5,
+            "status": "active",
+            "currentTeamSize": 3,
+            "team": [
+                {
+                    "engineerId": "65f2e8b7c261e6001234abce",
+                    "name": "John Doe",
+                    "role": "Lead Developer",
+                    "allocationPercentage": 40
+                },
+                {
+                    "engineerId": "65f2e8b7c261e6001234abcf",
+                    "name": "Jane Smith",
+                    "role": "Developer",
+                    "allocationPercentage": 30
+                }
+            ],
+            "createdAt": "2024-03-14T10:30:00.000Z",
+            "updatedAt": "2024-03-14T10:30:00.000Z"
+        }
+    }
+}
+```
+
+### Find Suitable Engineers for Project
+GET /api/projects/:id/suitable-engineers
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "suitableEngineers": [
+            {
+                "_id": "65f2e8b7c261e6001234abce",
+                "name": "John Doe",
+                "skills": ["React", "Node.js", "TypeScript"],
+                "seniority": "senior",
+                "currentAllocation": 60,
+                "availableCapacity": 40,
+                "skillMatch": 0.8,
+                "matchDetails": {
+                    "matchingSkills": ["React", "Node.js"],
+                    "missingSkills": ["MongoDB"]
+                }
+            },
+            {
+                "_id": "65f2e8b7c261e6001234abcf",
+                "name": "Jane Smith",
+                "skills": ["Python", "Django", "AWS"],
+                "seniority": "mid",
+                "currentAllocation": 40,
+                "availableCapacity": 60,
+                "skillMatch": 0.2,
+                "matchDetails": {
+                    "matchingSkills": [],
+                    "missingSkills": ["React", "Node.js", "MongoDB"]
+                }
+            }
+        ]
+    }
+}
+```
+
+## 4. Assignment Endpoints
+
+### Get All Assignments
+GET /api/assignments
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "assignments": [
+            {
+                "_id": "65f2e8b7c261e6001234abd2",
+                "engineer": {
+                    "_id": "65f2e8b7c261e6001234abce",
+                    "name": "John Doe"
+                },
+                "project": {
+                    "_id": "65f2e8b7c261e6001234abd0",
+                    "name": "E-commerce Platform"
+                },
+                "allocationPercentage": 40,
+                "startDate": "2024-03-01",
+                "endDate": "2024-08-31",
+                "role": "Lead Developer",
+                "status": "active",
+                "createdAt": "2024-03-14T10:30:00.000Z",
+                "updatedAt": "2024-03-14T10:30:00.000Z"
+            },
+            {
+                "_id": "65f2e8b7c261e6001234abd3",
+                "engineer": {
+                    "_id": "65f2e8b7c261e6001234abcf",
+                    "name": "Jane Smith"
+                },
+                "project": {
+                    "_id": "65f2e8b7c261e6001234abd0",
+                    "name": "E-commerce Platform"
+                },
+                "allocationPercentage": 30,
+                "startDate": "2024-03-01",
+                "endDate": "2024-08-31",
+                "role": "Developer",
+                "status": "active",
+                "createdAt": "2024-03-14T10:30:00.000Z",
+                "updatedAt": "2024-03-14T10:30:00.000Z"
+            }
+        ]
+    }
+}
+```
+
+### Get Assignment Details
+GET /api/assignments/:id
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "assignment": {
+            "_id": "65f2e8b7c261e6001234abd2",
+            "engineer": {
+                "_id": "65f2e8b7c261e6001234abce",
+                "name": "John Doe",
+                "email": "john.doe@example.com",
+                "skills": ["React", "Node.js", "TypeScript"]
+            },
+            "project": {
+                "_id": "65f2e8b7c261e6001234abd0",
+                "name": "E-commerce Platform",
+                "description": "Building a modern e-commerce platform",
+                "status": "active"
+            },
+            "allocationPercentage": 40,
+            "startDate": "2024-03-01",
+            "endDate": "2024-08-31",
+            "role": "Lead Developer",
+            "status": "active",
+            "createdAt": "2024-03-14T10:30:00.000Z",
+            "updatedAt": "2024-03-14T10:30:00.000Z"
+        }
+    }
+}
+```
+
+## Error Responses
+
+### 401 Unauthorized
+```json
+{
+    "success": false,
+    "error": "Not authorized to access this route"
+}
+```
+
+### 403 Forbidden
+```json
+{
+    "success": false,
+    "error": "Not authorized to perform this action"
+}
+```
+
+### 404 Not Found
+```json
+{
+    "success": false,
+    "error": "Resource not found"
+}
+```
+
+### 500 Server Error
+```json
+{
+    "success": false,
+    "error": "Server Error"
+}
+``` 
