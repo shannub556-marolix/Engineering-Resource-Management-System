@@ -4,8 +4,8 @@
   "description": "Backend for Engineering Resource Management System",
   "main": "server/server.js",
   "scripts": {
-    "start": "node server/server.js",
-    "dev": "nodemon server/server.js",
+    "start": "node server/server.js",        
+    "dev": "nodemon server/server.js" ,       
     "seed": "node server/seed/seedData.js"
   },
   "keywords": [
