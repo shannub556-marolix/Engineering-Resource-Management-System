@@ -78,9 +78,44 @@ const projects = [
   }
 ];
 
+// Check if data exists
+const checkExistingData = async () => {
+  try {
+    const userCount = await User.countDocuments();
+    const projectCount = await Project.countDocuments();
+    const assignmentCount = await Assignment.countDocuments();
+
+    return {
+      hasData: userCount > 0 || projectCount > 0 || assignmentCount > 0,
+      counts: {
+        users: userCount,
+        projects: projectCount,
+        assignments: assignmentCount
+      }
+    };
+  } catch (err) {
+    console.error('Error checking existing data:', err);
+    throw err;
+  }
+};
+
 // Seed function
 const seed = async () => {
   try {
+    // Check for existing data
+    const { hasData, counts } = await checkExistingData();
+    
+    if (hasData) {
+      console.log('Database already contains data:');
+      console.log(`Users: ${counts.users}`);
+      console.log(`Projects: ${counts.projects}`);
+      console.log(`Assignments: ${counts.assignments}`);
+      console.log('Skipping seed operation to preserve existing data.');
+      process.exit(0);
+    }
+
+    console.log('No existing data found. Starting seed operation...');
+
     // Clear existing data
     await User.deleteMany();
     await Project.deleteMany();
@@ -128,8 +163,11 @@ const seed = async () => {
 
     await Assignment.create(assignments);
 
-    console.log('Database seeded successfully');
-    process.exit();
+    console.log('Database seeded successfully with:');
+    console.log(`${engineers.length + managers.length} users`);
+    console.log(`${projects.length} projects`);
+    console.log(`${assignments.length} assignments`);
+    process.exit(0);
   } catch (err) {
     console.error('Error seeding database:', err);
     process.exit(1);
