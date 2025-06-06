@@ -205,67 +205,63 @@ const ManagerDashboard = () => {
             {engineers
               ?.slice(0, 5)
               .sort((a, b) => {
-                const capacityA = engineerCapacities[a._id]?.availableCapacity || 100;
-                const capacityB = engineerCapacities[b._id]?.availableCapacity || 100;
-                return capacityA - capacityB; // Sort by available capacity (ascending)
+                const capacityA = engineerCapacities[a._id];
+                const capacityB = engineerCapacities[b._id];
+                // Calculate free capacity (100 - currentAllocation)
+                const freeCapacityA = capacityA ? 100 - (capacityA.currentAllocation || 0) : 100;
+                const freeCapacityB = capacityB ? 100 - (capacityB.currentAllocation || 0) : 100;
+                return freeCapacityB - freeCapacityA; // Sort by free capacity (descending)
               })
               .map((engineer) => {
-              const capacity = engineerCapacities[engineer._id];
-              
-              // Calculate the latest end date from all assignments
-              const latestEndDate = capacity?.assignments?.reduce((latest, assignment) => {
-                const endDate = new Date(assignment.endDate);
-                return endDate > latest ? endDate : latest;
-              }, new Date(0));
+                const capacity = engineerCapacities[engineer._id];
+                
+                // Calculate the latest end date from all assignments
+                const latestEndDate = capacity?.assignments?.reduce((latest, assignment) => {
+                  const endDate = new Date(assignment.endDate);
+                  return endDate > latest ? endDate : latest;
+                }, new Date(0));
 
-              // Format the date for display
-              const formattedEndDate = latestEndDate && latestEndDate > new Date(0)
-                ? new Date(latestEndDate).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })
-                : 'Available now';
+                // Format the date for display
+                const formattedEndDate = latestEndDate && latestEndDate > new Date(0)
+                  ? new Date(latestEndDate).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })
+                  : 'Available now';
 
-              // Determine availability status and color
-              const availableCapacity = capacity?.availableCapacity || 100;
-              const getAvailabilityColor = (capacity: number) => {
-                if (capacity >= 80) return 'bg-green-100 text-green-800';
-                if (capacity >= 50) return 'bg-yellow-100 text-yellow-800';
-                if (capacity >= 20) return 'bg-orange-100 text-orange-800';
-                return 'bg-red-100 text-red-800';
-              };
+                // Calculate free capacity
+                const freeCapacity = capacity ? 100 - (capacity.currentAllocation || 0) : 100;
+                
+                // Determine availability status and color
+                const getAvailabilityColor = (capacity: number) => {
+                  if (capacity >= 80) return 'bg-green-100 text-green-800';
+                  if (capacity >= 50) return 'bg-yellow-100 text-yellow-800';
+                  if (capacity >= 20) return 'bg-orange-100 text-orange-800';
+                  return 'bg-red-100 text-red-800';
+                };
 
-              return (
-                <div key={engineer._id} className="p-4 bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200">
-                  <div className="flex justify-between items-center mb-3">
-                    <div>
-                      <span className="text-sm font-semibold text-gray-900">{engineer.name}</span>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Available from: {formattedEndDate}
+                return (
+                  <div key={engineer._id} className="p-4 bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <div className="flex justify-between items-center mb-3">
+                      <div>
+                        <span className="text-sm font-semibold text-gray-900">{engineer.name}</span>
+                        <div className="text-xs text-gray-500 mt-1">
+                          Available from: {formattedEndDate}
+                        </div>
+                      </div>
+                      <div className={`px-2.5 py-1 rounded-full text-xs font-medium ${getAvailabilityColor(freeCapacity)}`}>
+                        {freeCapacity}% Free
                       </div>
                     </div>
-                    <div className={`px-2.5 py-1 rounded-full text-xs font-medium ${getAvailabilityColor(availableCapacity)}`}>
-                      {availableCapacity}% Available
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <CapacityBar 
-                      current={capacity?.currentAllocation || 0} 
-                      max={capacity?.maxCapacity || 100} 
+                    <CapacityBar
+                      current={capacity?.currentAllocation || 0}
+                      max={100}
+                      label={`${capacity?.currentAllocation || 0}% Allocated`}
                     />
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-600">
-                        <span className="font-medium">{capacity?.currentAllocation || 0}%</span> allocated
-                      </span>
-                      <span className="text-gray-600">
-                        <span className="font-medium">{capacity?.availableCapacity || 100}%</span> free
-                      </span>
-                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </CardContent>
         </Card>
 
