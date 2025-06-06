@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useProjectsStore, Project } from '@/store/projectsStore';
 import { SkillTags } from '@/components/ui/SkillTags';
-import { Search, Plus, Edit, Trash2, Users, Calendar } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Users, Calendar, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -26,9 +26,12 @@ import {
 } from "@/components/ui/select";
 import ViewTeamDialog from '@/components/ViewTeamDialog';
 import EditProjectDialog from '@/components/EditProjectDialog';
+import { useAssignmentsStore } from '@/store/assignmentsStore';
+import { useEngineersStore } from '@/store/engineersStore';
 
 const CreateProjectDialog = ({ onSuccess }: { onSuccess: () => void }) => {
   const [open, setOpen] = useState(false);
+  const [skillsText, setSkillsText] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -40,6 +43,13 @@ const CreateProjectDialog = ({ onSuccess }: { onSuccess: () => void }) => {
     currentTeamSize: 0
   });
   const { createProject } = useProjectsStore();
+
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      requiredSkills: skillsText.split(',').map(skill => skill.trim()).filter(Boolean)
+    }));
+  }, [skillsText]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,14 +156,12 @@ const CreateProjectDialog = ({ onSuccess }: { onSuccess: () => void }) => {
           </div>
           <div className="space-y-2">
             <Label htmlFor="requiredSkills">Required Skills (comma-separated)</Label>
-            <Input
+            <Textarea
               id="requiredSkills"
-              value={formData.requiredSkills.join(', ')}
-              onChange={(e) => setFormData({
-                ...formData,
-                requiredSkills: e.target.value.split(',').map(skill => skill.trim()).filter(Boolean)
-              })}
-              placeholder="e.g., React, Node.js, TypeScript"
+              value={skillsText}
+              onChange={(e) => setSkillsText(e.target.value)}
+              placeholder="e.g., React, Node.js, TypeScript, Python"
+              className="min-h-[80px]"
             />
           </div>
           <div className="flex justify-end space-x-2">
@@ -170,13 +178,57 @@ const CreateProjectDialog = ({ onSuccess }: { onSuccess: () => void }) => {
 
 const ProjectsPage = () => {
   const { projects, loading, fetchProjects, deleteProject } = useProjectsStore();
+  const { assignments, fetchAssignments } = useAssignmentsStore();
+  const { engineers, fetchEngineers } = useEngineersStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [missingSkillsMap, setMissingSkillsMap] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+    const fetchData = async () => {
+      await Promise.all([
+        fetchProjects(),
+        fetchAssignments(),
+        fetchEngineers()
+      ]);
+    };
+    fetchData();
+  }, [fetchProjects, fetchAssignments, fetchEngineers]);
+
+  useEffect(() => {
+    if (projects && assignments && engineers) {
+      const missingSkills: Record<string, string[]> = {};
+      
+      projects.forEach(project => {
+        const projectAssignments = assignments.filter(
+          assignment => assignment.projectId && assignment.projectId._id === project._id
+        );
+        
+        const teamMemberIds = projectAssignments
+          .filter(assignment => assignment.engineerId)
+          .map(assignment => assignment.engineerId._id);
+        
+        const teamMembers = engineers.filter(
+          engineer => teamMemberIds.includes(engineer._id)
+        );
+        
+        const teamSkills = new Set(
+          teamMembers.flatMap(engineer => engineer.skills || [])
+        );
+        
+        const missing = project.requiredSkills.filter(
+          skill => !teamSkills.has(skill)
+        );
+        
+        if (missing.length > 0) {
+          missingSkills[project._id] = missing;
+        }
+      });
+      
+      setMissingSkillsMap(missingSkills);
+    }
+  }, [projects, assignments, engineers]);
 
   if (loading) {
     return (
@@ -277,13 +329,47 @@ const ProjectsPage = () => {
                   Team Size: {project.teamSize}
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {project.requiredSkills.map((skill) => (
-                  <Badge key={skill} variant="secondary">
-                    {skill}
-                  </Badge>
-                ))}
+              
+              {/* Required Skills Section */}
+              <div className="mb-4">
+                <div className="text-sm font-medium text-gray-700 mb-2">Required Skills:</div>
+                <div className="flex flex-wrap gap-2">
+                  {project.requiredSkills.map((skill) => (
+                    <Badge 
+                      key={skill} 
+                      variant="secondary"
+                      className={missingSkillsMap[project._id]?.includes(skill) 
+                        ? 'bg-yellow-100 text-yellow-800 border-yellow-200' 
+                        : 'bg-green-100 text-green-800 border-green-200'
+                      }
+                    >
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
               </div>
+
+              {/* Missing Skills Warning */}
+              {missingSkillsMap[project._id] && (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-yellow-800 mb-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span className="text-sm font-medium">Missing Skills</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {missingSkillsMap[project._id].map((skill) => (
+                      <Badge 
+                        key={skill} 
+                        variant="outline" 
+                        className="bg-yellow-100 text-yellow-800 border-yellow-200"
+                      >
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-between items-center">
                 <Button
                   variant="outline"

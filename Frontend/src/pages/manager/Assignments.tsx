@@ -19,13 +19,13 @@ import EditAssignmentDialog from '@/components/EditAssignmentDialog';
 
 interface Assignment {
   _id: string;
-  engineer: {
+  engineerId: {
     _id: string;
     name: string;
     email: string;
     maxCapacity: number;
   };
-  project: {
+  projectId: {
     _id: string;
     name: string;
     client: string;
@@ -82,6 +82,7 @@ const AssignmentsPage = () => {
       header: 'Engineer',
       cell: ({ row }: { row: { original: Assignment } }) => {
         const engineer = row.original.engineerId;
+        if (!engineer) return <div className="text-gray-500">Deleted Engineer</div>;
         return (
           <div className="flex items-center gap-2">
             <div className="font-medium">{engineer.name}</div>
@@ -95,10 +96,10 @@ const AssignmentsPage = () => {
       header: 'Project',
       cell: ({ row }: { row: { original: Assignment } }) => {
         const project = row.original.projectId;
+        if (!project) return <div className="text-gray-500">Deleted Project</div>;
         return (
           <div className="flex items-center gap-2">
             <div className="font-medium">{project.name}</div>
-            <div className="text-sm text-gray-500">({project.description})</div>
           </div>
         );
       }

@@ -6,6 +6,16 @@ import { useAssignmentsStore } from '@/store/assignmentsStore';
 import { Users, FolderOpen, Calendar, TrendingUp } from 'lucide-react';
 import { CapacityBar } from '@/components/ui/CapacityBar';
 import api from '@/api/axios';
+import { Button } from '@/components/ui/button';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead,
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { useAuthStore } from '@/store/authStore';
 
 interface EngineerCapacity {
   _id: string;
@@ -27,10 +37,19 @@ interface EngineerCapacity {
   }>;
 }
 
+interface Project {
+  _id: string;
+  name: string;
+  status: string;
+  currentTeamSize: number;
+  teamSize: number;
+}
+
 const ManagerDashboard = () => {
-  const { engineers, loading: engineersLoading, fetchEngineers } = useEngineersStore();
-  const { projects, loading: projectsLoading, fetchProjects } = useProjectsStore();
-  const { assignments, loading: assignmentsLoading, fetchAssignments } = useAssignmentsStore();
+  const { user } = useAuthStore();
+  const { engineers, loading: engineersLoading, error: engineersError, fetchEngineers } = useEngineersStore();
+  const { projects, loading: projectsLoading, error: projectsError, fetchProjects } = useProjectsStore();
+  const { assignments, loading: assignmentsLoading, error: assignmentsError, fetchAssignments } = useAssignmentsStore();
   const [engineerCapacities, setEngineerCapacities] = useState<Record<string, EngineerCapacity>>({});
 
   useEffect(() => {
@@ -41,6 +60,8 @@ const ManagerDashboard = () => {
           fetchProjects(),
           fetchAssignments()
         ]);
+        console.log('Projects data:', projects);
+        console.log('Assignments data:', assignments);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       }
@@ -81,6 +102,28 @@ const ManagerDashboard = () => {
   }, [engineers]);
 
   const isLoading = engineersLoading || projectsLoading || assignmentsLoading;
+  const hasError = engineersError || projectsError || assignmentsError;
+
+  if (isLoading) {
+    return (
+      <div className="p-8">
+        <div className="text-center py-8">Loading dashboard data...</div>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="p-8">
+        <div className="text-center py-8 text-red-600">
+          Error loading dashboard data. Please try refreshing the page.
+          {engineersError && <p>Engineers: {engineersError}</p>}
+          {projectsError && <p>Projects: {projectsError}</p>}
+          {assignmentsError && <p>Assignments: {assignmentsError}</p>}
+        </div>
+      </div>
+    );
+  }
 
   // Calculate average utilization based on active assignments only
   const avgUtilization = engineers?.length > 0
@@ -98,14 +141,6 @@ const ManagerDashboard = () => {
     totalAssignments: assignments?.length || 0,
     utilizationRate: avgUtilization,
   };
-
-  if (isLoading) {
-    return (
-      <div className="p-8">
-        <div className="text-center py-8">Loading dashboard data...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="p-8">
@@ -161,28 +196,71 @@ const ManagerDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Team Utilization</CardTitle>
+            <CardTitle>Team Utilization(Top 5)</CardTitle>
             <CardDescription>
               Current workload distribution across engineers
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {engineers?.slice(0, 5).map((engineer) => {
+            {engineers
+              ?.slice(0, 5)
+              .sort((a, b) => {
+                const capacityA = engineerCapacities[a._id]?.availableCapacity || 100;
+                const capacityB = engineerCapacities[b._id]?.availableCapacity || 100;
+                return capacityA - capacityB; // Sort by available capacity (ascending)
+              })
+              .map((engineer) => {
               const capacity = engineerCapacities[engineer._id];
+              
+              // Calculate the latest end date from all assignments
+              const latestEndDate = capacity?.assignments?.reduce((latest, assignment) => {
+                const endDate = new Date(assignment.endDate);
+                return endDate > latest ? endDate : latest;
+              }, new Date(0));
+
+              // Format the date for display
+              const formattedEndDate = latestEndDate && latestEndDate > new Date(0)
+                ? new Date(latestEndDate).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })
+                : 'Available now';
+
+              // Determine availability status and color
+              const availableCapacity = capacity?.availableCapacity || 100;
+              const getAvailabilityColor = (capacity: number) => {
+                if (capacity >= 80) return 'bg-green-100 text-green-800';
+                if (capacity >= 50) return 'bg-yellow-100 text-yellow-800';
+                if (capacity >= 20) return 'bg-orange-100 text-orange-800';
+                return 'bg-red-100 text-red-800';
+              };
+
               return (
-                <div key={engineer._id} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">{engineer.name}</span>
-                    <span className="text-sm text-gray-500">{engineer.seniority}</span>
+                <div key={engineer._id} className="p-4 bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200">
+                  <div className="flex justify-between items-center mb-3">
+                    <div>
+                      <span className="text-sm font-semibold text-gray-900">{engineer.name}</span>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Available from: {formattedEndDate}
+                      </div>
+                    </div>
+                    <div className={`px-2.5 py-1 rounded-full text-xs font-medium ${getAvailabilityColor(availableCapacity)}`}>
+                      {availableCapacity}% Available
+                    </div>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <CapacityBar 
                       current={capacity?.currentAllocation || 0} 
                       max={capacity?.maxCapacity || 100} 
                     />
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>{capacity?.currentAllocation || 0}% allocated</span>
-                      <span>{capacity?.availableCapacity || 100}% available</span>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-600">
+                        <span className="font-medium">{capacity?.currentAllocation || 0}%</span> allocated
+                      </span>
+                      <span className="text-gray-600">
+                        <span className="font-medium">{capacity?.availableCapacity || 100}%</span> free
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -193,30 +271,43 @@ const ManagerDashboard = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent Projects</CardTitle>
+            <CardTitle>Recent Projects(Top 5) </CardTitle>
             <CardDescription>
               Latest project status updates
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {projects?.slice(0, 5).map((project) => (
-                <div key={project._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">{project.name}</p>
-                    <p className="text-sm text-gray-600">
-                      {project.currentTeamSize}/{project.requiredTeamSize} team members
-                    </p>
-                  </div>
-                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    project.status === 'active' ? 'bg-green-100 text-green-800' :
-                    project.status === 'planning' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {project.status}
-                  </div>
+              {projects && projects.length > 0 ? (
+                projects.slice(0, 5).map((project) => {
+                  const projectAssignments = assignments?.filter(
+                    assignment => assignment.projectId && assignment.projectId._id === project._id
+                  ) || [];
+                  console.log(`Project ${project.name} assignments:`, projectAssignments);
+                  
+                  return (
+                    <div key={project._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium">{project.name}</p>
+                        <p className="text-sm text-gray-600">
+                          Team: {projectAssignments.length} of {project.teamSize} members
+                        </p>
+                      </div>
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        project.status === 'active' ? 'bg-green-100 text-green-800' :
+                        project.status === 'planning' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {project.status}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center text-gray-500 py-4">
+                  No projects found
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>

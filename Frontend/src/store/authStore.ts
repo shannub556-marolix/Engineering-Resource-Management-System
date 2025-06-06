@@ -10,6 +10,7 @@ export interface User {
   skills?: string[];
   maxCapacity?: number;
   seniority?: 'junior' | 'mid' | 'senior';
+  department?: string;
 }
 
 interface AuthState {
@@ -20,6 +21,7 @@ interface AuthState {
   register: (userData: any) => Promise<void>;
   logout: () => void;
   fetchProfile: () => Promise<void>;
+  updateProfile: (profileData: Partial<User>) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -132,6 +134,33 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error('Failed to fetch profile:', error);
           get().logout();
+        }
+      },
+
+      updateProfile: async (profileData) => {
+        try {
+          const response = await api.put('/api/auth/profile', profileData);
+          console.log('Update profile response:', response.data);
+          
+          // Handle different response formats
+          let user;
+          if (response.data.data?.user) {
+            // New format with nested data
+            user = response.data.data.user;
+          } else if (response.data.data) {
+            // Direct data format
+            user = response.data.data;
+          } else {
+            // Direct user format
+            user = response.data;
+          }
+          
+          if (user) {
+            set({ user: { ...user, id: user._id || user.id } });
+          }
+        } catch (error) {
+          console.error('Failed to update profile:', error);
+          throw error;
         }
       },
     }),

@@ -296,7 +296,7 @@ const CreateAssignmentDialog = ({
               </Select>
               {selectedProject && (
                 <p className="text-sm text-gray-500">
-                  Project dates: {selectedProject.startDate} to {selectedProject.endDate}
+                  Project dates: {selectedProject.startDate.split('T')[0]} to {selectedProject.endDate.split('T')[0]}
                 </p>
               )}
             </div>
@@ -367,6 +367,7 @@ const CreateAssignmentDialog = ({
                   type="date"
                   value={formData.startDate}
                   onChange={(e) => handleDateChange('startDate', e.target.value)}
+                  style={{justifyContent: "space-around"}}
                 />
               </div>
               <div className="space-y-2">
@@ -376,6 +377,7 @@ const CreateAssignmentDialog = ({
                   type="date"
                   value={formData.endDate}
                   onChange={(e) => handleDateChange('endDate', e.target.value)}
+                  style={{justifyContent: "space-around"}}
                 />
               </div>
             </div>

@@ -17,7 +17,10 @@ exports.getEngineers = async (req, res) => {
         }).populate('projectId', 'name');
 
         // Calculate total allocation from active assignments only
-        const activeAssignments = assignments.filter(assignment => assignment.status === 'active');
+        const activeAssignments = assignments.filter(assignment => 
+          assignment.status === 'active' && 
+          assignment.projectId // Only include assignments with valid projects
+        );
         const totalAllocated = activeAssignments.reduce(
           (sum, assignment) => sum + assignment.allocationPercentage,
           0
@@ -36,14 +39,16 @@ exports.getEngineers = async (req, res) => {
           maxCapacity: engineer.maxCapacity,
           currentAllocation: totalAllocated,
           availableCapacity: availableCapacity,
-          assignments: assignments.map(assignment => ({
-            projectName: assignment.projectId.name,
-            allocationPercentage: assignment.allocationPercentage,
-            startDate: assignment.startDate,
-            endDate: assignment.endDate,
-            role: assignment.role,
-            status: assignment.status
-          }))
+          assignments: assignments
+            .filter(assignment => assignment.projectId) // Only include assignments with valid projects
+            .map(assignment => ({
+              projectName: assignment.projectId?.name || 'Deleted Project',
+              allocationPercentage: assignment.allocationPercentage,
+              startDate: assignment.startDate,
+              endDate: assignment.endDate,
+              role: assignment.role,
+              status: assignment.status
+            }))
         };
       })
     );
@@ -146,18 +151,20 @@ exports.getEngineerCapacity = async (req, res) => {
           maxCapacity: engineer.maxCapacity,
           currentAllocation: totalAllocated,
           availableCapacity: availableCapacity,
-          assignments: assignments.map(assignment => ({
-            projectName: assignment.projectId.name,
-            allocationPercentage: assignment.allocationPercentage,
-            startDate: assignment.startDate,
-            endDate: assignment.endDate,
-            role: assignment.role,
-            status: assignment.projectId.status,
-            projectId: {
-              _id: assignment.projectId._id,
-              status: assignment.projectId.status
-            }
-          }))
+          assignments: assignments
+            .filter(assignment => assignment.projectId) // Only include assignments with valid projects
+            .map(assignment => ({
+              projectName: assignment.projectId?.name || 'Deleted Project',
+              allocationPercentage: assignment.allocationPercentage,
+              startDate: assignment.startDate,
+              endDate: assignment.endDate,
+              role: assignment.role,
+              status: assignment.projectId?.status || 'deleted',
+              projectId: assignment.projectId ? {
+                _id: assignment.projectId._id,
+                status: assignment.projectId.status
+              } : null
+            }))
         }
       }
     };

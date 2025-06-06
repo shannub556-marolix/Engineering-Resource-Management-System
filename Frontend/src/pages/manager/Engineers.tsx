@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useEngineersStore } from '@/store/engineersStore';
+import { useAssignmentsStore } from '@/store/assignmentsStore';
 import { SkillTags } from '@/components/ui/SkillTags';
 import { CapacityBar } from '@/components/ui/CapacityBar';
-import { Search, Plus, Edit, Trash2 } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, Edit, Trash2, Eye } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -26,9 +27,36 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ViewEngineerCapacityDialog from '@/components/ViewEngineerCapacityDialog';
+import { Textarea } from "@/components/ui/textarea";
+import api from '@/api/axios';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+interface EngineerCapacity {
+  _id: string;
+  name: string;
+  maxCapacity: number;
+  currentAllocation: number;
+  availableCapacity: number;
+  assignments: {
+    projectName: string;
+    allocationPercentage: number;
+    startDate: string;
+    endDate: string;
+    role: string;
+    status: string;
+  }[];
+}
 
 const CreateEngineerDialog = ({ onSuccess }: { onSuccess: () => void }) => {
   const [open, setOpen] = useState(false);
+  const [skillsText, setSkillsText] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -39,6 +67,13 @@ const CreateEngineerDialog = ({ onSuccess }: { onSuccess: () => void }) => {
     department: '',
   });
   const { createEngineer } = useEngineersStore();
+
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      skills: skillsText.split(',').map(skill => skill.trim()).filter(Boolean)
+    }));
+  }, [skillsText]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,15 +140,13 @@ const CreateEngineerDialog = ({ onSuccess }: { onSuccess: () => void }) => {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="skills">Skills (hyphen-separated)</Label>
-            <Input
+            <Label htmlFor="skills">Skills (comma-separated)</Label>
+            <Textarea
               id="skills"
-              value={formData.skills.join('-')}
-              onChange={(e) => setFormData({
-                ...formData,
-                skills: e.target.value.split('-').map(skill => skill.trim()).filter(Boolean)
-              })}
-              placeholder="e.g., React-Html-CSS-Javascript"
+              value={skillsText}
+              onChange={(e) => setSkillsText(e.target.value)}
+              placeholder="e.g., React, HTML, CSS, JavaScript"
+              className="min-h-[80px]"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -170,12 +203,63 @@ const CreateEngineerDialog = ({ onSuccess }: { onSuccess: () => void }) => {
 
 const EngineersPage = () => {
   const { engineers, loading, fetchEngineers, deleteEngineer } = useEngineersStore();
+  const { assignments, fetchAssignments } = useAssignmentsStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEngineer, setSelectedEngineer] = useState<{ id: string; name: string } | null>(null);
+  const [engineerCapacities, setEngineerCapacities] = useState<Record<string, EngineerCapacity>>({});
+  const [viewCapacityOpen, setViewCapacityOpen] = useState(false);
+  const [editEngineerOpen, setEditEngineerOpen] = useState(false);
 
+  // Single useEffect for all data fetching
   useEffect(() => {
-    fetchEngineers();
-  }, [fetchEngineers]);
+    let isMounted = true;
+
+    const fetchAllData = async () => {
+      try {
+        // First fetch engineers and assignments
+        await Promise.all([
+          fetchEngineers(),
+          fetchAssignments()
+        ]);
+
+        // Only proceed if component is still mounted
+        if (!isMounted) return;
+
+        // Then fetch capacities for each engineer
+        const capacityPromises = engineers.map(async (engineer) => {
+          try {
+            const response = await api.get(`/api/engineers/${engineer._id}/capacity`);
+            return [engineer._id, response.data.data.engineer];
+          } catch (error) {
+            console.error(`Error fetching capacity for engineer ${engineer._id}:`, error);
+            return [engineer._id, null];
+          }
+        });
+
+        const capacityResults = await Promise.all(capacityPromises);
+        const capacityMap = capacityResults.reduce((acc, [id, data]) => {
+          if (data) {
+            acc[id as string] = data;
+          }
+          return acc;
+        }, {} as Record<string, EngineerCapacity>);
+
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setEngineerCapacities(capacityMap);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchAllData();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchEngineers, fetchAssignments]); // Only depend on the fetch functions
 
   if (loading) {
     return (
@@ -245,53 +329,60 @@ const EngineersPage = () => {
                 <TableHead>Skills</TableHead>
                 <TableHead>Seniority</TableHead>
                 <TableHead>Department</TableHead>
-                {/* <TableHead>Capacity</TableHead> */}
-                <TableHead>Actions</TableHead>
+                
+                <TableHead>Available From</TableHead>
+                <TableHead className="w-[50px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredEngineers.map((engineer) => (
-                <TableRow key={engineer._id}>
-                  <TableCell className="font-medium">{engineer.name}</TableCell>
-                  <TableCell>{engineer.email}</TableCell>
-                  <TableCell>
-                    <SkillTags skills={engineer.skills} />
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className="capitalize">
-                      {engineer.seniority}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{engineer.department}</TableCell>
-                  {/* <TableCell>
-                    <div className="w-32">
-                      <CapacityBar
-                        current={engineer.currentAllocation || 0}
-                        max={engineer.maxCapacity}
-                      />
-                    </div>
-                  </TableCell> */}
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedEngineer({ id: engineer._id, name: engineer.name })}
-                      >
-                        View Assignments
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleDelete(engineer._id, engineer.name)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {filteredEngineers.map((engineer) => {
+                const capacity = engineerCapacities[engineer._id];
+                const latestEndDate = capacity?.assignments?.length > 0
+                  ? new Date(Math.max(...capacity.assignments.map(a => new Date(a.endDate).getTime())))
+                  : null;
+                const formattedDate = latestEndDate
+                  ? latestEndDate.toLocaleDateString()
+                  : 'Available now';
+
+                return (
+                  <TableRow key={engineer._id}>
+                    <TableCell>{engineer.name}</TableCell>
+                    <TableCell>{engineer.email}</TableCell>
+                    <TableCell>
+                      <SkillTags skills={engineer.skills} />
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{engineer.seniority}</Badge>
+                    </TableCell>
+                    <TableCell>{engineer.department}</TableCell>
+                   
+                    <TableCell>{formattedDate}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedEngineer({ id: engineer._id, name: engineer.name });
+                              setViewCapacityOpen(true);
+                            }}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Assignments
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
           {filteredEngineers.length === 0 && (
@@ -306,8 +397,13 @@ const EngineersPage = () => {
         <ViewEngineerCapacityDialog
           engineerId={selectedEngineer.id}
           engineerName={selectedEngineer.name}
-          open={!!selectedEngineer}
-          onOpenChange={(open) => !open && setSelectedEngineer(null)}
+          open={viewCapacityOpen}
+          onOpenChange={(open) => {
+            setViewCapacityOpen(open);
+            if (!open) {
+              setSelectedEngineer(null);
+            }
+          }}
         />
       )}
     </div>

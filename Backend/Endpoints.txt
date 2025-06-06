@@ -98,6 +98,41 @@ Response (200 OK):
 }
 ```
 
+### Update Profile
+PUT /api/auth/profile
+Authorization: Bearer <your-token>
+Content-Type: application/json
+
+Request Body:
+{
+    "name": "Updated Name",
+    "skills": ["Project Management", "Agile", "Scrum"],
+    "seniority": "senior",
+    "maxCapacity": 80,
+    "department": "Engineering"
+}
+
+Response (200 OK):
+```json
+{
+    "success": true,
+    "data": {
+        "user": {
+            "_id": "65f2e8b7c261e6001234abcd",
+            "name": "Updated Name",
+            "email": "test.manager@example.com",
+            "role": "manager",
+            "skills": ["Project Management", "Agile", "Scrum"],
+            "seniority": "senior",
+            "maxCapacity": 80,
+            "department": "Engineering",
+            "createdAt": "2024-03-14T10:30:00.000Z",
+            "updatedAt": "2024-03-14T10:35:00.000Z"
+        }
+    }
+}
+```
+
 ## 2. Engineer Endpoints
 
 ### Get All Engineers

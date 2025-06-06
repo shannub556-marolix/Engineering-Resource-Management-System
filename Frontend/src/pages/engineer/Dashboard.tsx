@@ -1,15 +1,36 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/store/authStore';
 import { useAssignmentsStore } from '@/store/assignmentsStore';
 import { SkillTags } from '@/components/ui/SkillTags';
 import { CapacityBar } from '@/components/ui/CapacityBar';
-import { Calendar, Clock, User, Award } from 'lucide-react';
+import { Calendar, Clock, User, Award, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import axios from 'axios';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import AssignmentTimeline from '@/components/AssignmentTimeline';
 
 interface CapacityData {
   engineer: {
@@ -34,9 +55,131 @@ interface ApiResponse {
   data: CapacityData;
 }
 
+const EditProfileDialog = ({ open, onOpenChange, onSuccess }: { open: boolean; onOpenChange: (open: boolean) => void; onSuccess: () => void }) => {
+  const { user, updateProfile } = useAuthStore();
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    skills: user?.skills || [],
+    seniority: user?.seniority || 'mid',
+    maxCapacity: user?.maxCapacity || 100,
+    department: user?.department || ''
+  });
+  const [skillsText, setSkillsText] = useState(user?.skills?.join(', ') || '');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      // Convert skills text to array
+      const skillsArray = skillsText
+        .split(',')
+        .map(skill => skill.trim())
+        .filter(skill => skill.length > 0);
+
+      await updateProfile({
+        ...formData,
+        skills: skillsArray
+      });
+
+      toast({
+        title: 'Profile updated',
+        description: 'Your profile has been updated successfully.',
+      });
+
+      onSuccess();
+      onOpenChange(false);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update profile. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Edit Profile</DialogTitle>
+          <DialogDescription>
+            Update your profile information.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="skills">Skills (comma-separated)</Label>
+            <Textarea
+              id="skills"
+              value={skillsText}
+              onChange={(e) => setSkillsText(e.target.value)}
+              placeholder="e.g., React, HTML, CSS, JavaScript"
+              className="min-h-[80px]"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="seniority">Seniority</Label>
+              <Select
+                value={formData.seniority}
+                onValueChange={(value) => setFormData({ ...formData, seniority: value as 'junior' | 'mid' | 'senior' })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select seniority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="junior">Junior</SelectItem>
+                  <SelectItem value="mid">Mid</SelectItem>
+                  <SelectItem value="senior">Senior</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <Input
+                id="department"
+                value={formData.department}
+                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                required
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="maxCapacity">Max Capacity (%)</Label>
+            <Input
+              id="maxCapacity"
+              type="number"
+              min="0"
+              max="100"
+              value={formData.maxCapacity}
+              onChange={(e) => setFormData({ ...formData, maxCapacity: parseInt(e.target.value) })}
+              required
+            />
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit">Save Changes</Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const EngineerDashboard = () => {
   const { user } = useAuthStore();
   const { assignments, loading: assignmentsLoading, fetchAssignments } = useAssignmentsStore();
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
 
   const { data: capacityData, isLoading: capacityLoading, error: capacityError } = useQuery<CapacityData>({
     queryKey: ['engineerCapacity', user?._id],
@@ -55,11 +198,12 @@ const EngineerDashboard = () => {
     fetchAssignments();
   }, [fetchAssignments]);
 
-  // Just use the assignments as they come from the API
-  const activeAssignments = capacityData?.engineer?.assignments?.filter(
+  // Get all assignments from capacity data
+  const allAssignments = capacityData?.engineer?.assignments || [];
+  // Filter active assignments for the active assignments section
+  const activeAssignments = allAssignments.filter(
     assignment => assignment.status === 'active'
-  ) || [];
-  console.log('Active Assignments:', activeAssignments);
+  );
   const activeProjectCount = activeAssignments.length;
 
   if (capacityLoading) {
@@ -94,11 +238,18 @@ const EngineerDashboard = () => {
       {/* Profile Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center space-x-2">
               <User className="h-5 w-5" />
               <span>Profile</span>
             </CardTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setEditProfileOpen(true)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -220,6 +371,20 @@ const EngineerDashboard = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Assignment Timeline */}
+      <div className="mt-8">
+        <AssignmentTimeline assignments={allAssignments} />
+      </div>
+
+      <EditProfileDialog
+        open={editProfileOpen}
+        onOpenChange={setEditProfileOpen}
+        onSuccess={() => {
+          // Refresh the page data
+          fetchAssignments();
+        }}
+      />
     </div>
   );
 };

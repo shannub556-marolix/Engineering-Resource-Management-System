@@ -112,9 +112,17 @@ export const LoginForm = () => {
           </Form>
           <div className="mt-4 text-center text-sm">
             Don't have an account?{' '}
-            <Link to="/register" className="text-primary hover:underline">
-              Sign up
-            </Link>
+            <a
+              href="mailto:Admin@example.com?subject=Hello&body=I%20wanted%20to%20reach%20out..."
+              className="text-primary hover:underline"
+            >
+            Contact Admin
+            </a>
+
+            {/* <Link to="email" className="text-primary hover:underline">
+            <a href="mailto:user@example.com"></a>
+              Contact Admin
+            </Link> */}
           </div>
         </CardContent>
       </Card>

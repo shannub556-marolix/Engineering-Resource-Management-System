@@ -91,6 +91,50 @@ exports.getProfile = async (req, res) => {
   }
 };
 
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+exports.updateProfile = async (req, res) => {
+  try {
+    const { name, skills, seniority, maxCapacity, department } = req.body;
+
+    // Find user and update allowed fields
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      {
+        name,
+        skills,
+        seniority,
+        maxCapacity,
+        department
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        user
+      }
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err.message
+    });
+  }
+};
+
 // Get token from model, create cookie and send response
 const sendTokenResponse = (user, statusCode, res) => {
   // Create token

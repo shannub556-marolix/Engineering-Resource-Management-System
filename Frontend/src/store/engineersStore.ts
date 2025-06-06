@@ -1,10 +1,10 @@
 import { create } from 'zustand';
-import api from '@/api/axios';
+import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:5000';
 
 // Create axios instance with default config
-const apiInstance = api.create({
+const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -12,7 +12,7 @@ const apiInstance = api.create({
 });
 
 // Add request interceptor to include auth token
-apiInstance.interceptors.request.use((config) => {
+api.interceptors.request.use((config) => {
   const token = localStorage.getItem('authToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -48,13 +48,15 @@ export const useEngineersStore = create<EngineersState>((set, get) => ({
   fetchEngineers: async () => {
     set({ loading: true, error: null });
     try {
-      const response = await apiInstance.get('/api/engineers');
+      const response = await api.get('/api/engineers');
+      console.log('Engineers response:', response.data);
       if (response.data.success) {
         set({ engineers: response.data.data.engineers, loading: false });
       } else {
         set({ loading: false, error: response.data.error });
       }
     } catch (error: any) {
+      console.error('Error fetching engineers:', error);
       set({ loading: false, error: error.response?.data?.error || 'Failed to fetch engineers' });
     }
   },
@@ -62,7 +64,7 @@ export const useEngineersStore = create<EngineersState>((set, get) => ({
   createEngineer: async (engineer) => {
     set({ loading: true, error: null });
     try {
-      const response = await apiInstance.post('/api/engineers', engineer);
+      const response = await api.post('/api/engineers', engineer);
       if (response.data.success) {
         set((state) => ({
           ...state,
@@ -80,7 +82,7 @@ export const useEngineersStore = create<EngineersState>((set, get) => ({
   updateEngineer: async (id, engineer) => {
     set({ loading: true, error: null });
     try {
-      const response = await apiInstance.put(`/api/engineers/${id}`, engineer);
+      const response = await api.put(`/api/engineers/${id}`, engineer);
       if (response.data.success) {
         set((state) => ({
           ...state,
@@ -100,7 +102,7 @@ export const useEngineersStore = create<EngineersState>((set, get) => ({
   deleteEngineer: async (id) => {
     set({ loading: true, error: null });
     try {
-      const response = await apiInstance.delete(`/api/engineers/${id}`);
+      const response = await api.delete(`/api/engineers/${id}`);
       if (response.data.success) {
         set((state) => ({
           ...state,
