@@ -1,14 +1,13 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000';
-
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
 // Add request interceptor to include auth token
@@ -66,7 +65,7 @@ export const useAssignmentsStore = create<AssignmentsState>((set, get) => ({
   fetchAssignments: async () => {
     set({ loading: true, error: null });
     try {
-      const response = await api.get(`${API_BASE_URL}/api/assignments`);
+      const response = await api.get('/api/assignments');
       console.log('Assignments response:', response.data);
       if (response.data.success) {
         set((state) => ({
@@ -95,7 +94,7 @@ export const useAssignmentsStore = create<AssignmentsState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       console.log('Sending assignment data:', assignment);
-      const response = await api.post(`${API_BASE_URL}/api/assignments`, {
+      const response = await api.post('/api/assignments', {
         engineerId: assignment.engineerId,
         projectId: assignment.projectId,
         allocationPercentage: assignment.allocationPercentage,
@@ -130,7 +129,7 @@ export const useAssignmentsStore = create<AssignmentsState>((set, get) => ({
   updateAssignment: async (id, assignment) => {
     set({ loading: true, error: null });
     try {
-      const response = await api.put(`${API_BASE_URL}/api/assignments/${id}`, assignment);
+      const response = await api.put(`/api/assignments/${id}`, assignment);
       if (response.data.success) {
         set((state) => ({
           ...state,
@@ -159,7 +158,7 @@ export const useAssignmentsStore = create<AssignmentsState>((set, get) => ({
   deleteAssignment: async (id) => {
     set({ loading: true, error: null });
     try {
-      const response = await api.delete(`${API_BASE_URL}/api/assignments/${id}`);
+      const response = await api.delete(`/api/assignments/${id}`);
       if (response.data.success) {
         set((state) => ({
           ...state,

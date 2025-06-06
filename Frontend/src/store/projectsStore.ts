@@ -1,14 +1,13 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000';
-
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
 // Add request interceptor to include auth token
@@ -62,7 +61,7 @@ export const useProjectsStore = create<ProjectsState>((set) => ({
   fetchProjects: async () => {
     set({ loading: true, error: null });
     try {
-      const response = await api.get(`${API_BASE_URL}/api/projects`);
+      const response = await api.get(`${import.meta.env.VITE_API_URL}/api/projects`);
       console.log('Projects response:', response.data);
       
       if (response.data.success) {
