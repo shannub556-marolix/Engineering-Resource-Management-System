@@ -2,6 +2,20 @@
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20App-blue)](https://engineering-resource-ma-git-4aa489-shanmukhas-projects-009da9a3.vercel.app/)
 
+## Sample User Credentials
+
+### Manager Account
+```
+Email: alice.johnson@example.com
+Password: password123
+```
+
+### Engineer Account
+```
+Email: john.doe@example.com
+Password: password123
+```
+
 A comprehensive system for managing engineering resources, projects, and assignments.
 
 ## Tech Stack
