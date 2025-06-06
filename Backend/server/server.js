@@ -16,7 +16,8 @@ app.use(cors({
     'http://localhost:3000',
     'http://localhost:5173',
     'https://engineering-resource-management-sys-seven.vercel.app',
-    'https://engineering-resource-management-system-frontend.vercel.app'
+    'https://engineering-resource-management-system-frontend.vercel.app',
+    'https://engineering-resource-ma-git-4aa489-shanmukhas-projects-009da9a3.vercel.app'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
